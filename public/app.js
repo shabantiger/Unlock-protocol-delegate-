@@ -38,6 +38,69 @@ window.addEventListener("DOMContentLoaded", () => {
   if (connectBtn) {
     connectBtn.addEventListener("click", connectWallet);
   }
+
+  // Delegation section logic
+  const delegateDropdown = document.getElementById("delegateDropdown");
+  const customDelegatee = document.getElementById("customDelegatee");
+  const delegateNowBtn = document.getElementById("delegateNowBtn");
+  const deleteVotesBtn = document.getElementById("deleteVotesBtn");
+  const addressError = document.getElementById("addressError");
+  const txStatus = document.getElementById("txStatus");
+  const deleteCountSpan = document.getElementById("deleteCount");
+
+  // Populate dropdown with options
+  if (delegateDropdown) {
+    delegateDropdown.innerHTML = `
+      <option value="">Select...</option>
+      <option value="self">Yourself</option>
+      <option value="steward">Unlock Steward</option>
+    `;
+  }
+
+  // Enable delegate button if valid address or dropdown selected
+  function validateDelegateInput() {
+    let valid = false;
+    if (delegateDropdown.value && delegateDropdown.value !== "") {
+      valid = true;
+      addressError.textContent = "";
+    } else if (customDelegatee.value && /^0x[a-fA-F0-9]{40}$/.test(customDelegatee.value)) {
+      valid = true;
+      addressError.textContent = "";
+    } else if (customDelegatee.value) {
+      addressError.textContent = "Invalid address";
+    } else {
+      addressError.textContent = "";
+    }
+    delegateNowBtn.disabled = !valid;
+  }
+
+  if (delegateDropdown) delegateDropdown.addEventListener("change", validateDelegateInput);
+  if (customDelegatee) customDelegatee.addEventListener("input", validateDelegateInput);
+
+  // Handle delegation (stub)
+  if (delegateNowBtn) {
+    delegateNowBtn.addEventListener("click", async () => {
+      txStatus.textContent = "Delegating...";
+      // TODO: Add contract interaction here
+      setTimeout(() => {
+        txStatus.textContent = "Delegation successful (stub)";
+      }, 1000);
+    });
+  }
+
+  // Handle delete votes (stub)
+  let deleteCount = 0;
+  if (deleteVotesBtn) {
+    deleteVotesBtn.addEventListener("click", async () => {
+      txStatus.textContent = "Deleting voting rights...";
+      // TODO: Add contract interaction here
+      setTimeout(() => {
+        deleteCount++;
+        deleteCountSpan.textContent = deleteCount;
+        txStatus.textContent = "Voting rights deleted (stub)";
+      }, 1000);
+    });
+  }
 });
 delegateType.addEventListener("change", () => {
   const type = delegateType.value;
