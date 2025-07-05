@@ -1,18 +1,7 @@
-let provider, signer, userAddress;
-
-// Use correct IDs from HTML
-const connectWalletBtn = document.getElementById("connectWalletBtn");
-const walletDisplay = document.getElementById("walletAddress");
-const delegateDropdown = document.getElementById("delegateDropdown");
-const customDelegatee = document.getElementById("customDelegatee");
-const delegateNowBtn = document.getElementById("delegateNowBtn");
-const statusDiv = document.getElementById("txStatus");
-const addressError = document.getElementById("addressError");
-
-// Contract ABI
+// Contract ABI and address
 const UP_TOKEN_ADDRESS = "0xac27fa800955849d6d17cc8952ba9dd6eaa66187";
-const UP_TOKEN_ABI = [
-  {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
+const UP_TOKEN_ABI =[
+ {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
   {"inputs":[],"name":"CheckpointUnorderedInsertion","type":"error"},
   {"inputs":[],"name":"ECDSAInvalidSignature","type":"error"},
   {"inputs":[{"internalType":"uint256","name":"length","type":"uint256"}],"name":"ECDSAInvalidSignatureLength","type":"error"},
@@ -70,8 +59,19 @@ const UP_TOKEN_ABI = [
   {"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
   {"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"value","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
   {"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"value","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
-  {"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"}
+  {"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"} 
 ];
+
+// Use correct IDs from HTML
+const connectWalletBtn = document.getElementById("connectWalletBtn");
+const walletDisplay = document.getElementById("walletAddress");
+const delegateDropdown = document.getElementById("delegateDropdown");
+const customDelegatee = document.getElementById("customDelegatee");
+const delegateNowBtn = document.getElementById("delegateNowBtn");
+const statusDiv = document.getElementById("txStatus");
+const addressError = document.getElementById("addressError");
+
+let provider, signer, userAddress;
 
 // Populate delegate dropdown
 if (delegateDropdown) {
@@ -118,14 +118,15 @@ document.addEventListener("DOMContentLoaded", () => {
     connectWalletBtn.addEventListener("click", async () => {
       if (typeof window.ethereum !== "undefined") {
         try {
-          provider = new ethers.providers.Web3Provider(window.ethereum);
+          provider = new window.ethers.providers.Web3Provider(window.ethereum);
           await provider.send("eth_requestAccounts", []);
           signer = provider.getSigner();
           userAddress = await signer.getAddress();
           walletDisplay.textContent = userAddress;
           statusDiv.textContent = "";
         } catch (err) {
-          statusDiv.textContent = "Wallet connection rejected.";
+          statusDiv.textContent = "Wallet connection rejected: " + (err.message || err);
+          console.error("Wallet connection error:", err);
         }
       } else {
         statusDiv.textContent = "MetaMask not detected.";
@@ -152,7 +153,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       try {
         statusDiv.textContent = "Delegating...";
-        const contract = new ethers.Contract(UP_TOKEN_ADDRESS, UP_TOKEN_ABI, signer);
+        const contract = new window.ethers.Contract(UP_TOKEN_ADDRESS, UP_TOKEN_ABI, signer);
         const tx = await contract.delegate(delegatee);
         statusDiv.textContent = "Waiting for confirmation...";
         await tx.wait();
