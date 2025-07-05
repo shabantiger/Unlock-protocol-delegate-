@@ -1,11 +1,13 @@
 let provider, signer, userAddress;
 
-const connectWalletBtn = document.getElementById("connectWallet");
+// Use correct IDs from HTML
+const connectWalletBtn = document.getElementById("connectWalletBtn");
 const walletDisplay = document.getElementById("walletAddress");
-const delegateType = document.getElementById("delegateType");
-const delegateAddressInput = document.getElementById("delegateAddress");
-const delegateBtn = document.getElementById("delegateBtn");
-const statusDiv = document.getElementById("status");
+const delegateDropdown = document.getElementById("delegateDropdown");
+const customDelegatee = document.getElementById("customDelegatee");
+const delegateNowBtn = document.getElementById("delegateNowBtn");
+const statusDiv = document.getElementById("txStatus");
+const addressError = document.getElementById("addressError");
 
 // Contract ABI
 const UP_TOKEN_ADDRESS = "0xac27fa800955849d6d17cc8952ba9dd6eaa66187";
@@ -71,87 +73,98 @@ const UP_TOKEN_ABI = [
   {"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"}
 ];
 
-// Connect wallet
-async function connectWallet() {
-  if (typeof window.ethereum !== "undefined") {
-    try {
-      provider = new ethers.providers.Web3Provider(window.ethereum);
-      await provider.send("eth_requestAccounts", []);
-      signer = provider.getSigner();
-      userAddress = await signer.getAddress();
-      walletDisplay.innerText = `Connected: ${userAddress}`;
-      statusDiv.innerText = "";
-    } catch (err) {
-      statusDiv.innerText = "Wallet connection rejected.";
-    }
-  } else {
-    alert("MetaMask not detected. Please install MetaMask.");
-  }
+// Populate delegate dropdown
+if (delegateDropdown) {
+  delegateDropdown.innerHTML = `
+    <option value="">Choose...</option>
+    <option value="self">Yourself</option>
+    <option value="0x1111111111111111111111111111111111111111">Unlock Steward</option>
+  `;
 }
 
 // Show/hide custom address input
-delegateType.addEventListener("change", () => {
-  if (delegateType.value === "custom") {
-    delegateAddressInput.classList.remove("hidden");
-  } else {
-    delegateAddressInput.classList.add("hidden");
-    delegateAddressInput.value = "";
-  }
-  validateDelegate();
-});
-
-// Validate input and enable/disable button
-function validateDelegate() {
-  let valid = false;
-  if (delegateType.value === "custom") {
-    valid = /^0x[a-fA-F0-9]{40}$/.test(delegateAddressInput.value.trim());
-  } else {
-    valid = true;
-  }
-  delegateBtn.disabled = !valid;
-}
-delegateAddressInput.addEventListener("input", validateDelegate);
-delegateType.addEventListener("change", validateDelegate);
-
-// Delegate button click
-delegateBtn.addEventListener("click", async () => {
-  if (!signer) {
-    statusDiv.innerText = "Please connect your wallet first.";
-    return;
-  }
-  let delegatee;
-  if (delegateType.value === "self") {
-    delegatee = userAddress;
-  } else if (delegateType.value === "steward") {
-    // Replace with actual steward address or show a list if you have more
-    delegatee = "0x1111111111111111111111111111111111111111";
-  } else if (delegateType.value === "custom") {
-    delegatee = delegateAddressInput.value.trim();
-    if (!/^0x[a-fA-F0-9]{40}$/.test(delegatee)) {
-      statusDiv.innerText = "Invalid custom address.";
-      return;
+if (delegateDropdown && customDelegatee) {
+  delegateDropdown.addEventListener("change", () => {
+    if (delegateDropdown.value === "custom") {
+      customDelegatee.classList.remove("hidden");
+    } else {
+      customDelegatee.classList.add("hidden");
+      customDelegatee.value = "";
     }
+    validateDelegateInput();
+  });
+}
+
+function validateDelegateInput() {
+  let valid = false;
+  if (delegateDropdown.value && delegateDropdown.value !== "" && delegateDropdown.value !== "custom") {
+    valid = true;
+    addressError.textContent = "";
+  } else if (customDelegatee.value && /^0x[a-fA-F0-9]{40}$/.test(customDelegatee.value)) {
+    valid = true;
+    addressError.textContent = "";
+  } else if (customDelegatee.value) {
+    addressError.textContent = "Invalid address";
   } else {
-    statusDiv.innerText = "Please select a delegate type.";
-    return;
+    addressError.textContent = "";
+  }
+  delegateNowBtn.disabled = !valid;
+}
+if (customDelegatee) customDelegatee.addEventListener("input", validateDelegateInput);
+if (delegateDropdown) delegateDropdown.addEventListener("change", validateDelegateInput);
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (connectWalletBtn) {
+    connectWalletBtn.addEventListener("click", async () => {
+      if (typeof window.ethereum !== "undefined") {
+        try {
+          provider = new ethers.providers.Web3Provider(window.ethereum);
+          await provider.send("eth_requestAccounts", []);
+          signer = provider.getSigner();
+          userAddress = await signer.getAddress();
+          walletDisplay.textContent = userAddress;
+          statusDiv.textContent = "";
+        } catch (err) {
+          statusDiv.textContent = "Wallet connection rejected.";
+        }
+      } else {
+        statusDiv.textContent = "MetaMask not detected.";
+      }
+    });
   }
 
-  try {
-    statusDiv.innerText = "Sending delegation transaction...";
-    const contract = new ethers.Contract(UP_TOKEN_ADDRESS, UP_TOKEN_ABI, signer);
-    const tx = await contract.delegate(delegatee);
-    statusDiv.innerText = "Waiting for confirmation...";
-    await tx.wait();
-    statusDiv.innerText = `Delegation successful! You delegated to ${delegatee}`;
-  } catch (err) {
-    statusDiv.innerText = "Delegation failed: " + (err.reason || err.message);
+  if (delegateNowBtn) {
+    delegateNowBtn.addEventListener("click", async () => {
+      if (!signer) {
+        statusDiv.textContent = "Please connect your wallet first.";
+        return;
+      }
+      let delegatee;
+      if (delegateDropdown.value === "self") {
+        delegatee = userAddress;
+      } else if (delegateDropdown.value && delegateDropdown.value !== "custom") {
+        delegatee = delegateDropdown.value;
+      } else if (customDelegatee.value && /^0x[a-fA-F0-9]{40}$/.test(customDelegatee.value)) {
+        delegatee = customDelegatee.value;
+      } else {
+        statusDiv.textContent = "Please select or enter a valid delegatee.";
+        return;
+      }
+      try {
+        statusDiv.textContent = "Delegating...";
+        const contract = new ethers.Contract(UP_TOKEN_ADDRESS, UP_TOKEN_ABI, signer);
+        const tx = await contract.delegate(delegatee);
+        statusDiv.textContent = "Waiting for confirmation...";
+        await tx.wait();
+        statusDiv.textContent = `Delegation successful! You delegated to ${delegatee}`;
+      } catch (err) {
+        statusDiv.textContent = "Delegation failed: " + (err.reason || err.message);
+      }
+    });
   }
+
+  // Initial state
+  if (delegateNowBtn) delegateNowBtn.disabled = true;
 });
-
-// Connect wallet button
-connectWalletBtn.addEventListener("click", connectWallet);
-
-// Initial state
-delegateBtn.disabled = true;
 
 
