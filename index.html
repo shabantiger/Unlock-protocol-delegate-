@@ -7,7 +7,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.10.0/dist/ethers.umd.min.js"></script>
-  <script src="public/app.js"></script>
 </head>
 <body class="bg-gradient-to-br from-gray-950 via-indigo-950 to-purple-950 min-h-screen text-gray-100">
   <!-- Navbar -->
@@ -32,7 +31,7 @@
             <svg class="w-7 h-7 text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 6v6l4 2"/></svg>
             Unlock Dashboard
           </h2>
-          <p id="walletAddress" class="text-base font-mono text-gray-200 mt-2 truncate">Not connected</p>
+          <p id="walletAddressDashboard" class="text-base font-mono text-gray-200 mt-2 truncate">Not connected</p>
         </div>
         <div class="flex items-center gap-3">
           <span class="inline-flex items-center gap-1 bg-gradient-to-r from-emerald-500 to-indigo-500 text-white font-semibold px-4 py-1 rounded-full text-sm shadow" id="activityStatus">
@@ -109,5 +108,6 @@
     </section>
   </main>
   <!-- Modals as before -->
+  <script src="public/app.js"></script>
 </body>
 </html>

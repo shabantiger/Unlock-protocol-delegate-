@@ -4,88 +4,9 @@ const connectWalletBtn = document.getElementById("connectWallet");
 const walletDisplay = document.getElementById("walletAddress");
 const delegateType = document.getElementById("delegateType");
 const delegateAddressInput = document.getElementById("delegateAddress");
-// FAQ & Help (now includes resource links in accordion)
-const FAQS = [
-  {q: "What is delegation?", a: "Delegation lets you assign your voting power to another address (a steward or yourself) so they can vote on your behalf."},
-  {q: "What is voting power?", a: "Voting power is the number of votes your tokens provide, and can be exercised in governance decisions."},
-  {q: "What are stewards?", a: "Stewards are trusted community members who can vote on behalf of others for efficient governance."},
-  {q: "Where can I get more help?", a: `Check out <a href="https://docs.unlock-protocol.com" target="_blank" class="underline text-indigo-300">Unlock Protocol Docs</a>, <a href="https://unlock-protocol.com" target="_blank" class="underline text-indigo-300">main site</a>, or <a href="https://bit.ly/joinunlockdaodiscord" target="_blank" class="underline text-indigo-300">DAO Discord</a>.`}
-];
-// 🔌 Define the wallet connect function
-async function connectWallet() {
-  if (typeof window.ethereum !== "undefined") {
-    try {
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-      const walletAddress = accounts[0];
-      const walletDisplay = document.getElementById("walletAddress");
+const delegateBtn = document.getElementById("delegateBtn");
+const statusDiv = document.getElementById("status");
 
-      if (walletDisplay) {
-        walletDisplay.innerText = `Connected: ${walletAddress}`;
-      }
-
-      console.log("Connected wallet:", walletAddress);
-    } catch (err) {
-      console.error("Wallet connection rejected:", err);
-    }
-  } else {
-    alert("MetaMask not detected. Please install MetaMask.");
-  }
-}
-
-// 🎯 Hook up the button by ID
-window.addEventListener("DOMContentLoaded", () => {
-  const connectBtn = document.getElementById("connectWalletBtn");
-  if (connectBtn) {
-    connectBtn.addEventListener("click", connectWallet);
-  }
-
-  // Delegation section logic
-  const delegateDropdown = document.getElementById("delegateDropdown");
-  const customDelegatee = document.getElementById("customDelegatee");
-  const delegateNowBtn = document.getElementById("delegateNowBtn");
-  const addressError = document.getElementById("addressError");
-
-  // Populate dropdown with example options
-  if (delegateDropdown) {
-    delegateDropdown.innerHTML = `
-      <option value="">Choose...</option>
-      <option value="0x1111111111111111111111111111111111111111">Unlock Steward 1</option>
-      <option value="0x2222222222222222222222222222222222222222">Unlock Steward 2</option>
-      <option value="self">Yourself</option>
-    `;
-  }
-
-  function validateDelegateInput() {
-    let valid = false;
-    if (delegateDropdown && delegateDropdown.value && delegateDropdown.value !== "") {
-      valid = true;
-      addressError.textContent = "";
-    } else if (
-      customDelegatee &&
-      customDelegatee.value &&
-      /^0x[a-fA-F0-9]{40}$/.test(customDelegatee.value)
-    ) {
-      valid = true;
-      addressError.textContent = "";
-    } else if (customDelegatee && customDelegatee.value) {
-      addressError.textContent = "Invalid address";
-    } else {
-      addressError.textContent = "";
-    }
-    if (delegateNowBtn) delegateNowBtn.disabled = !valid;
-  }
-
-  if (delegateDropdown) delegateDropdown.addEventListener("change", validateDelegateInput);
-  if (customDelegatee) customDelegatee.addEventListener("input", validateDelegateInput);
-});
-delegateType.addEventListener("change", () => {
-  const type = delegateType.value;
-  if (type === "custom") {
-    delegateAddressInput.classList.remove("hidden");
-  } else {
-    delegateAddressInput.classList.add("hidden");
-  }
-});
 // Contract ABI
 const UP_TOKEN_ADDRESS = "0xac27fa800955849d6d17cc8952ba9dd6eaa66187";
 const UP_TOKEN_ABI = [
@@ -149,5 +70,88 @@ const UP_TOKEN_ABI = [
   {"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"value","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
   {"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"}
 ];
+
+// Connect wallet
+async function connectWallet() {
+  if (typeof window.ethereum !== "undefined") {
+    try {
+      provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      signer = provider.getSigner();
+      userAddress = await signer.getAddress();
+      walletDisplay.innerText = `Connected: ${userAddress}`;
+      statusDiv.innerText = "";
+    } catch (err) {
+      statusDiv.innerText = "Wallet connection rejected.";
+    }
+  } else {
+    alert("MetaMask not detected. Please install MetaMask.");
+  }
+}
+
+// Show/hide custom address input
+delegateType.addEventListener("change", () => {
+  if (delegateType.value === "custom") {
+    delegateAddressInput.classList.remove("hidden");
+  } else {
+    delegateAddressInput.classList.add("hidden");
+    delegateAddressInput.value = "";
+  }
+  validateDelegate();
+});
+
+// Validate input and enable/disable button
+function validateDelegate() {
+  let valid = false;
+  if (delegateType.value === "custom") {
+    valid = /^0x[a-fA-F0-9]{40}$/.test(delegateAddressInput.value.trim());
+  } else {
+    valid = true;
+  }
+  delegateBtn.disabled = !valid;
+}
+delegateAddressInput.addEventListener("input", validateDelegate);
+delegateType.addEventListener("change", validateDelegate);
+
+// Delegate button click
+delegateBtn.addEventListener("click", async () => {
+  if (!signer) {
+    statusDiv.innerText = "Please connect your wallet first.";
+    return;
+  }
+  let delegatee;
+  if (delegateType.value === "self") {
+    delegatee = userAddress;
+  } else if (delegateType.value === "steward") {
+    // Replace with actual steward address or show a list if you have more
+    delegatee = "0x1111111111111111111111111111111111111111";
+  } else if (delegateType.value === "custom") {
+    delegatee = delegateAddressInput.value.trim();
+    if (!/^0x[a-fA-F0-9]{40}$/.test(delegatee)) {
+      statusDiv.innerText = "Invalid custom address.";
+      return;
+    }
+  } else {
+    statusDiv.innerText = "Please select a delegate type.";
+    return;
+  }
+
+  try {
+    statusDiv.innerText = "Sending delegation transaction...";
+    const contract = new ethers.Contract(UP_TOKEN_ADDRESS, UP_TOKEN_ABI, signer);
+    const tx = await contract.delegate(delegatee);
+    statusDiv.innerText = "Waiting for confirmation...";
+    await tx.wait();
+    statusDiv.innerText = `Delegation successful! You delegated to ${delegatee}`;
+  } catch (err) {
+    statusDiv.innerText = "Delegation failed: " + (err.reason || err.message);
+  }
+});
+
+// Connect wallet button
+connectWalletBtn.addEventListener("click", connectWallet);
+
+// Initial state
+delegateBtn.disabled = true;
 
 
