@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Unlock Protocol Delegate DApp</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.10.0/dist/ethers.umd.min.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body class="bg-gradient-to-br from-gray-950 via-indigo-950 to-purple-950 min-h-screen text-gray-100">
+  <!-- Navbar -->
+  <nav class="flex items-center justify-between p-5 border-b border-indigo-800 bg-gradient-to-r from-indigo-950 via-gray-900 to-purple-950">
+    <div class="flex items-center gap-2">
+      <img src="assets/unlock-logo.svg" class="h-8 w-8" alt="Unlock Logo">
+      <span class="font-bold text-2xl text-transparent bg-gradient-to-r from-indigo-400 to-emerald-400 bg-clip-text">Unlock Delegation</span>
+    </div>
+    <button id="connectWalletBtn" class="bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 text-white font-semibold px-5 py-2 rounded-lg shadow-lg hover:from-indigo-600 hover:to-emerald-600 transition-all duration-300">
+      Connect Wallet
+    </button>
+  </nav>
+  <main class="w-full max-w-3xl mx-auto p-4 space-y-8 mb-8">
+    <!-- Dashboard -->
+    <section id="dashboard" class="rounded-2xl bg-gradient-to-br from-indigo-950 via-gray-900 to-purple-950 shadow-2xl border border-indigo-700/40 p-8 space-y-7 relative overflow-hidden">
+      <div class="absolute -top-12 -right-12 w-60 h-60 bg-gradient-to-tr from-indigo-600/30 to-purple-500/20 rounded-full blur-3xl opacity-70 pointer-events-none"></div>
+      <div class="absolute -bottom-16 -left-16 w-56 h-56 bg-gradient-to-tr from-emerald-400/20 to-indigo-600/30 rounded-full blur-3xl opacity-60 pointer-events-none"></div>
+      <div class="flex flex-col md:flex-row md:justify-between gap-6 items-start md:items-center z-10 relative">
+        <div>
+          <h2 class="text-2xl font-bold text-transparent bg-gradient-to-r from-indigo-400 to-emerald-400 bg-clip-text flex items-center gap-2 drop-shadow">
+            <svg class="w-7 h-7 text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 6v6l4 2"/></svg>
+            Unlock Dashboard
+          </h2>
+          <p id="walletAddress" class="text-base font-mono text-gray-200 mt-2 truncate">Not connected</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="inline-flex items-center gap-1 bg-gradient-to-r from-emerald-500 to-indigo-500 text-white font-semibold px-4 py-1 rounded-full text-sm shadow" id="activityStatus">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Inactive
+          </span>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mt-6">
+        <div class="rounded-xl bg-gradient-to-br from-indigo-900/80 via-gray-800/90 to-purple-950/70 p-5 shadow-xl border-l-4 border-indigo-500 flex flex-col gap-2">
+          <div class="flex items-center gap-2">
+            <span class="bg-indigo-600/20 text-indigo-300 rounded-full px-2 py-0.5 text-sm font-medium">Delegatee</span>
+          </div>
+          <span id="delegatee" class="text-lg font-mono text-indigo-200 break-all">-</span>
+        </div>
+        <div class="rounded-xl bg-gradient-to-br from-emerald-900/80 via-gray-800/90 to-indigo-950/70 p-5 shadow-xl border-l-4 border-emerald-400 flex flex-col gap-2">
+          <div class="flex items-center gap-2">
+            <span class="bg-emerald-600/20 text-emerald-300 rounded-full px-2 py-0.5 text-sm font-medium">UP Balance</span>
+          </div>
+          <span id="upBalance" class="text-lg font-mono text-emerald-200">0.00</span>
+        </div>
+        <div class="rounded-xl bg-gradient-to-br from-purple-900/80 via-gray-800/90 to-indigo-950/70 p-5 shadow-xl border-l-4 border-purple-400 flex flex-col gap-2">
+          <div class="flex items-center gap-2">
+            <span class="bg-purple-600/20 text-purple-300 rounded-full px-2 py-0.5 text-sm font-medium">Voting Power</span>
+          </div>
+          <span id="votingPower" class="text-lg font-mono text-purple-200">0.00</span>
+        </div>
+        <div class="rounded-xl bg-gradient-to-br from-orange-900/80 via-gray-800/90 to-yellow-950/70 p-5 shadow-xl border-l-4 border-orange-400 flex flex-col gap-2">
+          <div class="flex items-center gap-2">
+            <span class="bg-orange-500/20 text-orange-300 rounded-full px-2 py-0.5 text-sm font-medium">2FA Status</span>
+          </div>
+          <span id="2faStatus" class="text-lg font-mono text-yellow-300">Not enabled</span>
+        </div>
+      </div>
+    </section>
+    <!-- Delegation -->
+    <section id="delegation" class="rounded-2xl bg-gradient-to-br from-blue-950 via-gray-900 to-purple-950 shadow-2xl border border-blue-700/20 p-8 space-y-6">
+      <h2 class="text-xl font-bold text-blue-400 flex items-center gap-2">
+        <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 12l2 2 4-4"/></svg>
+        Delegate Your Votes
+        <span class="ml-2 bg-blue-700/30 text-blue-200 rounded-full px-2 py-0.5 text-xs">Step 2</span>
+      </h2>
+      <div class="flex flex-col gap-4">
+        <label class="text-sm text-blue-200">Choose Delegatee:</label>
+        <select id="delegateDropdown" class="bg-gray-800 text-white rounded-lg px-3 py-2 border-2 border-blue-700 focus:border-emerald-400 outline-none shadow"></select>
+        <div class="flex items-center gap-3">
+          <input type="text" id="customDelegatee" placeholder="Or enter custom address" class="flex-1 bg-gray-800 text-white rounded-lg px-3 py-2 border-2 border-purple-700 focus:border-emerald-400 outline-none shadow" />
+          <span id="addressError" class="text-xs text-red-400"></span>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-2">
+          <button id="delegateNowBtn" class="bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 text-white font-bold px-6 py-2 rounded-xl shadow-lg hover:from-indigo-600 hover:to-emerald-600 transition-all duration-300 disabled:opacity-50" disabled>
+            Delegate Now
+          </button>
+          <button id="deleteVotesBtn" class="bg-gradient-to-r from-red-600 via-orange-500 to-yellow-400 text-white font-bold px-6 py-2 rounded-xl shadow-lg hover:from-red-700 hover:to-yellow-500 transition-all duration-300">
+            Delete Voting Rights
+          </button>
+          <span class="text-xs text-gray-400 self-center">Deleted: <span id="deleteCount" class="text-yellow-300">0</span> times</span>
+        </div>
+        <div id="txStatus" class="mt-2 text-sm"></div>
+      </div>
+    </section>
+    <!-- Voting Power Visualization, Transactions, Feedback/FAQ as before ... -->
+    <section class="rounded-2xl bg-gradient-to-br from-gray-800 via-indigo-950 to-gray-950 shadow-2xl border border-indigo-700/40 p-8 space-y-4">
+      <div class="flex justify-between items-center">
+        <h2 class="text-xl font-bold text-indigo-300">FAQ & Resources</h2>
+      </div>
+      <div id="faqAccordion" class="mt-2"></div>
+      <!-- Resource links for user help -->
+      <div class="flex flex-col sm:flex-row gap-3 mt-4">
+        <a href="https://docs.unlock-protocol.com" target="_blank" class="text-indigo-400 underline hover:text-emerald-400">Unlock Docs</a>
+        <a href="https://unlock-protocol.com" target="_blank" class="text-indigo-400 underline hover:text-emerald-400">Unlock Protocol</a>
+        <a href="https://bit.ly/joinunlockdaodiscord" target="_blank" class="text-indigo-400 underline hover:text-emerald-400">DAO Discord</a>
+      </div>
+    </section>
+  </main>
+  <!-- Modals as before -->
+</body>
+</html>
