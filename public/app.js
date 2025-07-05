@@ -1,4 +1,9 @@
-// ...rest of file as before...
+let provider, signer, userAddress;
+
+const connectWalletBtn = document.getElementById("connectWallet");
+const walletDisplay = document.getElementById("walletAddress");
+const delegateType = document.getElementById("delegateType");
+const delegateAddressInput = document.getElementById("delegateAddress");
 // FAQ & Help (now includes resource links in accordion)
 const FAQS = [
   {q: "What is delegation?", a: "Delegation lets you assign your voting power to another address (a steward or yourself) so they can vote on your behalf."},
@@ -32,6 +37,14 @@ window.addEventListener("DOMContentLoaded", () => {
   const connectBtn = document.getElementById("connectWalletBtn");
   if (connectBtn) {
     connectBtn.addEventListener("click", connectWallet);
+  }
+});
+delegateType.addEventListener("change", () => {
+  const type = delegateType.value;
+  if (type === "custom") {
+    delegateAddressInput.classList.remove("hidden");
+  } else {
+    delegateAddressInput.classList.add("hidden");
   }
 });
 // Contract ABI
