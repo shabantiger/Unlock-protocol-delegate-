@@ -70,6 +70,8 @@ const customDelegatee = document.getElementById("customDelegatee");
 const delegateNowBtn = document.getElementById("delegateNowBtn");
 const statusDiv = document.getElementById("txStatus");
 const addressError = document.getElementById("addressError");
+const walletAddressDashboard = document.getElementById("walletAddressDashboard");
+const delegateStatus = document.getElementById("delegateStatus");
 
 let provider, signer, userAddress;
 
@@ -78,14 +80,14 @@ if (delegateDropdown) {
   delegateDropdown.innerHTML = `
     <option value="">Choose...</option>
     <option value="self">Yourself</option>
-    <option value="0x1111111111111111111111111111111111111111">Unlock Steward</option>
+    <option value="steward">Unlock Steward</option>
   `;
 }
 
-// Show/hide custom address input
+// Show/hide custom address input for steward
 if (delegateDropdown && customDelegatee) {
   delegateDropdown.addEventListener("change", () => {
-    if (delegateDropdown.value === "custom") {
+    if (delegateDropdown.value === "steward") {
       customDelegatee.classList.remove("hidden");
     } else {
       customDelegatee.classList.add("hidden");
@@ -97,15 +99,20 @@ if (delegateDropdown && customDelegatee) {
 
 function validateDelegateInput() {
   let valid = false;
-  if (delegateDropdown.value && delegateDropdown.value !== "" && delegateDropdown.value !== "custom") {
+  if (delegateDropdown.value === "self") {
     valid = true;
     addressError.textContent = "";
-  } else if (customDelegatee.value && /^0x[a-fA-F0-9]{40}$/.test(customDelegatee.value)) {
-    valid = true;
-    addressError.textContent = "";
-  } else if (customDelegatee.value) {
-    addressError.textContent = "Invalid address";
+  } else if (delegateDropdown.value === "steward") {
+    if (customDelegatee.value && /^0x[a-fA-F0-9]{40}$/.test(customDelegatee.value)) {
+      valid = true;
+      addressError.textContent = "";
+    } else if (customDelegatee.value) {
+      addressError.textContent = "Invalid address";
+    } else {
+      addressError.textContent = "";
+    }
   } else {
+    valid = false;
     addressError.textContent = "";
   }
   delegateNowBtn.disabled = !valid;
@@ -124,6 +131,8 @@ document.addEventListener("DOMContentLoaded", () => {
           userAddress = await signer.getAddress();
           walletDisplay.textContent = userAddress;
           statusDiv.textContent = "";
+          // Update dashboard connection status
+          if (walletAddressDashboard) walletAddressDashboard.textContent = "Connected";
         } catch (err) {
           statusDiv.textContent = "Wallet connection rejected: " + (err.message || err);
           console.error("Wallet connection error:", err);
@@ -143,10 +152,13 @@ document.addEventListener("DOMContentLoaded", () => {
       let delegatee;
       if (delegateDropdown.value === "self") {
         delegatee = userAddress;
-      } else if (delegateDropdown.value && delegateDropdown.value !== "custom") {
-        delegatee = delegateDropdown.value;
-      } else if (customDelegatee.value && /^0x[a-fA-F0-9]{40}$/.test(customDelegatee.value)) {
-        delegatee = customDelegatee.value;
+      } else if (delegateDropdown.value === "steward") {
+        if (customDelegatee.value && /^0x[a-fA-F0-9]{40}$/.test(customDelegatee.value)) {
+          delegatee = customDelegatee.value;
+        } else {
+          statusDiv.textContent = "Please enter a valid steward address.";
+          return;
+        }
       } else {
         statusDiv.textContent = "Please select or enter a valid delegatee.";
         return;
@@ -158,6 +170,8 @@ document.addEventListener("DOMContentLoaded", () => {
         statusDiv.textContent = "Waiting for confirmation...";
         await tx.wait();
         statusDiv.textContent = `Delegation successful! You delegated to ${delegatee}`;
+        // Update dashboard delegation status
+        if (delegateStatus) delegateStatus.textContent = "Active";
       } catch (err) {
         statusDiv.textContent = "Delegation failed: " + (err.reason || err.message);
       }
@@ -166,6 +180,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initial state
   if (delegateNowBtn) delegateNowBtn.disabled = true;
+  if (walletAddressDashboard) walletAddressDashboard.textContent = "Not connected";
+  if (delegateStatus) delegateStatus.textContent = "Inactive";
 });
 
 
